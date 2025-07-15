@@ -1,0 +1,42 @@
+name: Generate Snake
+
+on:
+  schedule: # Автоматический запуск раз в день
+    - cron: "0 0 * * *"
+  workflow_dispatch: # Запуск вручную через Actions
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0 # Клонируем все ветки
+
+      - name: Generate Snake SVG
+        uses: Platane/snk@v3
+        with:
+          github_user_name: Pugoev
+          outputs: dist/snake.svg
+
+      - name: Push to output branch
+        run: |
+          git config --global user.name "github-actions"
+          git config --global user.email "github-actions@github.com"
+
+          # Переходим на ветку output
+          git fetch origin output
+          git checkout output
+
+          # Копируем сгенерированный файл
+          cp dist/snake.svg snake.svg
+
+          # Добавляем и коммитим
+          git add snake.svg
+          git commit -m "Update snake animation" || echo "No changes"
+
+          # Пушим изменения в ветку output
+          git push origin output
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
